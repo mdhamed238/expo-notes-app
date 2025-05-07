@@ -15,7 +15,6 @@ export default function NotesScreen() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load notes when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadNotes();
@@ -35,7 +34,6 @@ export default function NotesScreen() {
     }
   };
 
-  // UI Kitten Icons for media types
   const ImageIcon = (props: any) => <Icon {...props} name="image-outline" />;
   const DocumentIcon = (props: any) => <Icon {...props} name="file-text-outline" />;
   const NoteIcon = (props: any) => <Icon {...props} name="file-outline" />;

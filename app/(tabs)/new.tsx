@@ -27,7 +27,6 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Camera, Image, FileText, Save, X, File } from 'lucide-react-native';
 
-// Define the form schema with Zod
 const formSchema = z.object({
   title: z.string().min(1, { message: 'Title is required' }),
   content: z.string().optional(),
@@ -61,8 +60,6 @@ export default function NewNoteScreen() {
       media: undefined,
     },
   });
-
-  // Rest of your permission handling and picker functions remain the same
 
   const takePicture = async () => {
     try {

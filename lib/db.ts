@@ -2,26 +2,25 @@ import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system';
 
 export interface Note {
-  id?: number;
+  id: number;
   title: string;
   content: string;
   mediaPath?: string | null;
   mediaType?: 'image' | 'audio' | 'document' | null;
+  category?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 let db: SQLite.SQLiteDatabase;
-let dbInitialized = false; // Track initialization state
+let dbInitialized = false; 
 
-// Initialize the database
 export const initDatabase = async () => {
-  if (dbInitialized) return; // Prevent multiple initializations
+  if (dbInitialized) return; 
   
   try {
     db = await SQLite.openDatabaseAsync('notes.db');
 
-    // Modified schema without category field
     await db.execAsync(`CREATE TABLE IF NOT EXISTS notes (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           title TEXT NOT NULL,
@@ -40,14 +39,12 @@ export const initDatabase = async () => {
   }
 };
 
-// Ensure database is initialized before any operation
 const ensureDbInitialized = async () => {
   if (!dbInitialized) {
     await initDatabase();
   }
 };
 
-// Save a new note
 export const saveNote = async (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Promise<Note> => {
   await ensureDbInitialized();
   
@@ -73,7 +70,6 @@ export const saveNote = async (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'
   }
 };
 
-// Update an existing note
 export const updateNote = async (note: Note): Promise<void> => {
   await ensureDbInitialized();
   
@@ -92,7 +88,6 @@ export const updateNote = async (note: Note): Promise<void> => {
   }
 };
 
-// Delete a note
 export const deleteNote = async (note: Note): Promise<void> => {
   await ensureDbInitialized();
   
@@ -112,7 +107,6 @@ export const deleteNote = async (note: Note): Promise<void> => {
   }
 };
 
-// Retrieve all notes
 export const getNotes = async (): Promise<Note[]> => {
   await ensureDbInitialized();
   
@@ -125,7 +119,6 @@ export const getNotes = async (): Promise<Note[]> => {
   }
 };
 
-// Search notes by query
 export const searchNotes = async (query: string): Promise<Note[]> => {
   await ensureDbInitialized();
   
@@ -144,7 +137,6 @@ export const searchNotes = async (query: string): Promise<Note[]> => {
   }
 };
 
-// Initialize the database when the module is loaded
 initDatabase().catch(error => {
   console.error('Failed to initialize the database:', error);
 });

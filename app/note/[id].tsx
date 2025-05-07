@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { View, StyleSheet, Platform, Image as RNImage } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
+import * as IntentLauncher from 'expo-intent-launcher';
+import * as FileSystem from 'expo-file-system';
 import { Note, deleteNote, getNotes, updateNote } from '@/lib/db';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -37,7 +39,6 @@ export default function NoteDetailScreen() {
 
   const loadNote = async () => {
     try {
-      // Get all notes and find the one with matching ID
       const notes = await getNotes();
       const foundNote = notes.find((n) => n.id === Number(id));
       if (foundNote) {
@@ -90,7 +91,6 @@ export default function NoteDetailScreen() {
       isEditing &&
       (editTitle !== note?.title || editContent !== note?.content)
     ) {
-      // Confirm before discarding changes
       alert('Do you want to save your changes?');
     } else {
       setIsEditing(!isEditing);
@@ -102,11 +102,19 @@ export default function NoteDetailScreen() {
     console.log('Opening document:', note.mediaPath);
     try {
       const uri = note.mediaPath;
-      // Use Expo's sharing API to open the document
-      await Sharing.shareAsync(uri, {
-        UTI: '.pdf', // Universal Type Identifier, adjust based on your document types
-        mimeType: 'application/pdf', // Adjust based on your document types
-      });
+      if (Platform.OS === 'android') {
+        const contentUri = await FileSystem.getContentUriAsync(uri);
+        await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+          data: contentUri,
+          flags: 1,
+          type: 'application/pdf',
+        });
+      } else {
+        await Sharing.shareAsync(uri, {
+          UTI: '.pdf',
+          mimeType: 'application/pdf', 
+        });
+      }
     } catch (error) {
       console.error('Error opening document:', error);
       alert(
@@ -114,7 +122,7 @@ export default function NoteDetailScreen() {
       );
     }
   };
-  // UI Kitten Icons
+
   const TrashIcon = (props: any) => <Icon {...props} name="trash-2-outline" />;
   const BackIcon = (props: any) => (
     <Icon {...props} name="arrow-back-outline" />
@@ -289,6 +297,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 8,
+    fontSize: 20
   },
   titleInput: {
     flex: 1,

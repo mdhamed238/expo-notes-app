@@ -36,7 +36,7 @@ export default function SearchScreen() {
       <TouchableOpacity style={styles.noteCard}>
         <View style={styles.noteHeader}>
           <Text style={styles.noteTitle}>{item.title}</Text>
-          {getMediaIcon(item.mediaType)}
+          {getMediaIcon(item.mediaType as any)}
         </View>
         <Text style={styles.notePreview} numberOfLines={2}>
           {item.content}
