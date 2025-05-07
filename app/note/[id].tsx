@@ -1,15 +1,7 @@
 import { useEffect, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Platform,
-  Image as RNImage,
-  Linking,
-} from 'react-native';
+import { View, StyleSheet, Platform, Image as RNImage } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import * as IntentLauncher from 'expo-intent-launcher';
-import * as WebBrowser from 'expo-web-browser';
-import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { Note, deleteNote, getNotes, updateNote } from '@/lib/db';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -20,7 +12,7 @@ import {
   Card,
   Modal,
   Divider,
-  Input
+  Input,
 } from '@ui-kitten/components';
 
 export default function NoteDetailScreen() {
@@ -47,7 +39,7 @@ export default function NoteDetailScreen() {
     try {
       // Get all notes and find the one with matching ID
       const notes = await getNotes();
-      const foundNote = notes.find(n => n.id === Number(id));
+      const foundNote = notes.find((n) => n.id === Number(id));
       if (foundNote) {
         setNote(foundNote);
       } else {
@@ -74,7 +66,7 @@ export default function NoteDetailScreen() {
 
   const handleSaveChanges = async () => {
     if (!note) return;
-    
+
     setIsSaving(true);
     try {
       const updatedNote: Note = {
@@ -82,11 +74,10 @@ export default function NoteDetailScreen() {
         title: editTitle,
         content: editContent,
       };
-      
+
       await updateNote(updatedNote);
       setNote(updatedNote);
       setIsEditing(false);
-      
     } catch (error) {
       console.error('Error updating note:', error);
     } finally {
@@ -95,7 +86,10 @@ export default function NoteDetailScreen() {
   };
 
   const toggleEditMode = () => {
-    if (isEditing && (editTitle !== note?.title || editContent !== note?.content)) {
+    if (
+      isEditing &&
+      (editTitle !== note?.title || editContent !== note?.content)
+    ) {
       // Confirm before discarding changes
       alert('Do you want to save your changes?');
     } else {
@@ -108,17 +102,23 @@ export default function NoteDetailScreen() {
     console.log('Opening document:', note.mediaPath);
     try {
       const uri = note.mediaPath;
-      // download, and the open it using share to allow the user to choose the app to open it with
-      console.log('URI:', uri);
+      // Use Expo's sharing API to open the document
+      await Sharing.shareAsync(uri, {
+        UTI: '.pdf', // Universal Type Identifier, adjust based on your document types
+        mimeType: 'application/pdf', // Adjust based on your document types
+      });
     } catch (error) {
       console.error('Error opening document:', error);
-      alert('Could not open this document. The file might be corrupted or in an unsupported format.');
+      alert(
+        'Could not open this document. The file might be corrupted or in an unsupported format.'
+      );
     }
   };
-
   // UI Kitten Icons
   const TrashIcon = (props: any) => <Icon {...props} name="trash-2-outline" />;
-  const BackIcon = (props: any) => <Icon {...props} name="arrow-back-outline" />;
+  const BackIcon = (props: any) => (
+    <Icon {...props} name="arrow-back-outline" />
+  );
   const FileIcon = (props: any) => <Icon {...props} name="file-text-outline" />;
   const EditIcon = (props: any) => <Icon {...props} name="edit-outline" />;
   const SaveIcon = (props: any) => <Icon {...props} name="save-outline" />;
@@ -135,13 +135,13 @@ export default function NoteDetailScreen() {
     <SafeAreaView style={{ flex: 1 }}>
       <Layout style={styles.container}>
         <View style={styles.header}>
-          <Button 
-            appearance="ghost" 
-            accessoryLeft={BackIcon} 
-            onPress={() => router.back()} 
+          <Button
+            appearance="ghost"
+            accessoryLeft={BackIcon}
+            onPress={() => router.back()}
             style={styles.backButton}
           />
-          
+
           {isEditing ? (
             <Input
               style={styles.titleInput}
@@ -151,9 +151,11 @@ export default function NoteDetailScreen() {
               placeholder="Note Title"
             />
           ) : (
-            <Text category="h4" style={styles.title}>{note.title}</Text>
+            <Text category="h4" style={styles.title}>
+              {note.title}
+            </Text>
           )}
-          
+
           <View style={styles.headerButtons}>
             {isEditing ? (
               <Button
@@ -165,16 +167,16 @@ export default function NoteDetailScreen() {
               />
             ) : (
               <>
-                <Button 
-                  appearance="ghost" 
-                  accessoryLeft={EditIcon} 
+                <Button
+                  appearance="ghost"
+                  accessoryLeft={EditIcon}
                   onPress={toggleEditMode}
                   style={styles.editButton}
                 />
-                <Button 
-                  appearance="ghost" 
-                  status="danger" 
-                  accessoryLeft={TrashIcon} 
+                <Button
+                  appearance="ghost"
+                  status="danger"
+                  accessoryLeft={TrashIcon}
                   onPress={() => setDeleteModalVisible(true)}
                 />
               </>
@@ -203,7 +205,7 @@ export default function NoteDetailScreen() {
             <RNImage
               source={{ uri: note.mediaPath }}
               style={styles.image}
-              resizeMode="cover"
+              resizeMode="contain"
             />
           </Card>
         )}
@@ -221,26 +223,31 @@ export default function NoteDetailScreen() {
         <Text appearance="hint" style={styles.date}>
           Last updated: {new Date(note.updatedAt).toLocaleString()}
         </Text>
-        
+
         <Modal
           visible={isDeleteModalVisible}
           backdropStyle={styles.backdrop}
           onBackdropPress={() => setDeleteModalVisible(false)}
         >
           <Card disabled>
-            <Text category="h6" style={styles.modalTitle}>Delete Note</Text>
-            <Text>Are you sure you want to delete this note? This action cannot be undone.</Text>
+            <Text category="h6" style={styles.modalTitle}>
+              Delete Note
+            </Text>
+            <Text>
+              Are you sure you want to delete this note? This action cannot be
+              undone.
+            </Text>
             <View style={styles.modalButtonContainer}>
-              <Button 
-                style={styles.modalButton} 
-                appearance="outline" 
+              <Button
+                style={styles.modalButton}
+                appearance="outline"
                 onPress={() => setDeleteModalVisible(false)}
               >
                 Cancel
               </Button>
-              <Button 
-                style={styles.modalButton} 
-                status="danger" 
+              <Button
+                style={styles.modalButton}
+                status="danger"
                 onPress={handleDelete}
               >
                 Delete
@@ -308,7 +315,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 200,
+    height: 300,
     borderRadius: 8,
   },
   mediaButton: {

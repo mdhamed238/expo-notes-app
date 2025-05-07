@@ -12,9 +12,12 @@ export interface Note {
 }
 
 let db: SQLite.SQLiteDatabase;
+let dbInitialized = false; // Track initialization state
 
 // Initialize the database
 export const initDatabase = async () => {
+  if (dbInitialized) return; // Prevent multiple initializations
+  
   try {
     db = await SQLite.openDatabaseAsync('notes.db');
 
@@ -29,6 +32,7 @@ export const initDatabase = async () => {
           updatedAt TEXT NOT NULL
         );`);
 
+    dbInitialized = true;
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
@@ -36,8 +40,17 @@ export const initDatabase = async () => {
   }
 };
 
+// Ensure database is initialized before any operation
+const ensureDbInitialized = async () => {
+  if (!dbInitialized) {
+    await initDatabase();
+  }
+};
+
 // Save a new note
 export const saveNote = async (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Promise<Note> => {
+  await ensureDbInitialized();
+  
   const now = new Date().toISOString();
   const noteWithTimestamps = { 
     ...note, 
@@ -62,6 +75,8 @@ export const saveNote = async (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'
 
 // Update an existing note
 export const updateNote = async (note: Note): Promise<void> => {
+  await ensureDbInitialized();
+  
   const now = new Date().toISOString();
 
   try {
@@ -79,6 +94,8 @@ export const updateNote = async (note: Note): Promise<void> => {
 
 // Delete a note
 export const deleteNote = async (note: Note): Promise<void> => {
+  await ensureDbInitialized();
+  
   if (note.mediaPath) {
     try {
       await FileSystem.deleteAsync(note.mediaPath);
@@ -97,6 +114,8 @@ export const deleteNote = async (note: Note): Promise<void> => {
 
 // Retrieve all notes
 export const getNotes = async (): Promise<Note[]> => {
+  await ensureDbInitialized();
+  
   try {
     const result = await db.getAllAsync<Note>('SELECT * FROM notes ORDER BY updatedAt DESC');
     return result;
@@ -108,6 +127,8 @@ export const getNotes = async (): Promise<Note[]> => {
 
 // Search notes by query
 export const searchNotes = async (query: string): Promise<Note[]> => {
+  await ensureDbInitialized();
+  
   const searchTerm = `%${query}%`;
   try {
     const result = await db.getAllAsync<Note>(
